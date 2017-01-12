@@ -13,6 +13,9 @@
     return;
   }
 
+  var cacheProperties = fabric.Object.prototype.cacheProperties.concat();
+  cacheProperties.push('points');
+
   /**
    * Polygon class
    * @class fabric.Polygon
@@ -49,6 +52,8 @@
      */
     minY: 0,
 
+    cacheProperties: cacheProperties,
+
     /**
      * Constructor
      * @param {Array} points Array of points
@@ -56,8 +61,8 @@
      * @return {fabric.Polygon} thisArg
      */
     initialize: function(points, options) {
-      options = options || { };
-      this.points = points || [ ];
+      options = options || {};
+      this.points = points || [];
       this.callSuper('initialize', options);
       this._calcDimensions();
       if (!('top' in options)) {
@@ -85,8 +90,7 @@
 
       this.width = (maxX - minX) || 0;
       this.height = (maxY - minY) || 0;
-
-      this.minX = minX || 0,
+      this.minX = minX || 0;
       this.minY = minY || 0;
     },
 
@@ -133,6 +137,7 @@
     /**
      * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
+     * @param {Boolean} noTransform
      */
     _render: function(ctx, noTransform) {
       if (!this.commonRender(ctx, noTransform)) {
@@ -148,22 +153,23 @@
     /**
      * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
+     * @param {Boolean} noTransform
      */
     commonRender: function(ctx, noTransform) {
-      var point, len = this.points.length;
+      var point, len = this.points.length,
+          x = noTransform ? 0 : this.pathOffset.x,
+          y = noTransform ? 0 : this.pathOffset.y;
 
       if (!len || isNaN(this.points[len - 1].y)) {
         // do not draw if no points or odd points
         // NaN comes from parseFloat of a empty string in parser
         return false;
       }
-
-      noTransform || ctx.translate(-this.pathOffset.x, -this.pathOffset.y);
       ctx.beginPath();
-      ctx.moveTo(this.points[0].x, this.points[0].y);
+      ctx.moveTo(this.points[0].x - x, this.points[0].y - y);
       for (var i = 0; i < len; i++) {
         point = this.points[i];
-        ctx.lineTo(point.x, point.y);
+        ctx.lineTo(point.x - x, point.y - y);
       }
       return true;
     },
@@ -222,10 +228,12 @@
    * @static
    * @memberOf fabric.Polygon
    * @param {Object} object Object to create an instance from
+   * @param {Function} [callback] Callback to invoke when an fabric.Path instance is created
+   * @param {Boolean} [forceAsync] Force an async behaviour trying to create pattern first
    * @return {fabric.Polygon} Instance of fabric.Polygon
    */
-  fabric.Polygon.fromObject = function(object) {
-    return new fabric.Polygon(object.points, object, true);
+  fabric.Polygon.fromObject = function(object, callback, forceAsync) {
+    return fabric.Object._fromObject('Polygon', object, callback, forceAsync, 'points');
   };
 
 })(typeof exports !== 'undefined' ? exports : this);

@@ -1,10 +1,9 @@
 (function() {
 
   var degreesToRadians = fabric.util.degreesToRadians,
-      //jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+      /* eslint-disable camelcase */
       isVML = function() { return typeof G_vmlCanvasManager !== 'undefined'; };
-  //jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-
+      /* eslint-enable camelcase */
   fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prototype */ {
 
     /**
@@ -114,24 +113,8 @@
      */
     _getNonTransformedDimensions: function() {
       var strokeWidth = this.strokeWidth,
-          w = this.width,
-          h = this.height,
-          addStrokeToW = true,
-          addStrokeToH = true;
-
-      if (this.type === 'line' && this.strokeLineCap === 'butt') {
-        addStrokeToH = w;
-        addStrokeToW = h;
-      }
-
-      if (addStrokeToH) {
-        h += h < 0 ? -strokeWidth : strokeWidth;
-      }
-
-      if (addStrokeToW) {
-        w += w < 0 ? -strokeWidth : strokeWidth;
-      }
-
+          w = this.width + strokeWidth,
+          h = this.height + strokeWidth;
       return { x: w, y: h };
     },
 
@@ -146,24 +129,24 @@
         skewY = this.skewY;
       }
       var dimensions = this._getNonTransformedDimensions(),
-          dimX = dimensions.x /2, dimY = dimensions.y / 2,
+          dimX = dimensions.x / 2, dimY = dimensions.y / 2,
           points = [
-          {
-            x: -dimX,
-            y: -dimY
-          },
-          {
-            x: dimX,
-            y: -dimY
-          },
-          {
-            x: -dimX,
-            y: dimY
-          },
-          {
-            x: dimX,
-            y: dimY
-          }],
+            {
+              x: -dimX,
+              y: -dimY
+            },
+            {
+              x: dimX,
+              y: -dimY
+            },
+            {
+              x: -dimX,
+              y: dimY
+            },
+            {
+              x: dimX,
+              y: dimY
+            }],
           i, transformMatrix = this._calcDimensionsTransformMatrix(skewX, skewY, false),
           bbox;
       for (i = 0; i < points.length; i++) {
@@ -179,8 +162,7 @@
     _calculateCurrentDimensions: function()  {
       var vpt = this.getViewportTransform(),
           dim = this._getTransformedDimensions(),
-          w = dim.x, h = dim.y,
-          p = fabric.util.transformPoint(new fabric.Point(w, h), vpt, true);
+          p = fabric.util.transformPoint(dim, vpt, true);
 
       return p.scalarAdd(2 * this.padding);
     },
@@ -194,8 +176,7 @@
      * @chainable
      */
     drawSelectionBackground: function(ctx) {
-      if (!this.selectionBackgroundColor || this.group
-        || this !== this.canvas.getActiveObject()) {
+      if (!this.selectionBackgroundColor || this.group || !this.active) {
         return this;
       }
       ctx.save();
@@ -205,7 +186,7 @@
       ctx.scale(1 / vpt[0], 1 / vpt[3]);
       ctx.rotate(degreesToRadians(this.angle));
       ctx.fillStyle = this.selectionBackgroundColor;
-      ctx.fillRect(-wh.x/2, -wh.y/2, wh.x, wh.y);
+      ctx.fillRect(-wh.x / 2, -wh.y / 2, wh.x, wh.y);
       ctx.restore();
       return this;
     },
@@ -272,8 +253,8 @@
           matrix = fabric.util.customTransformMatrix(options.scaleX, options.scaleY, options.skewX),
           wh = fabric.util.transformPoint(p, matrix),
           strokeWidth = 1 / this.borderScaleFactor,
-          width = wh.x + strokeWidth + 2 * this.padding,
-          height = wh.y + strokeWidth + 2 * this.padding;
+          width = wh.x + strokeWidth,
+          height = wh.y + strokeWidth;
 
       ctx.save();
       this._setLineDash(ctx, this.borderDashArray, null);
@@ -342,23 +323,23 @@
 
         // middle-top
         this._drawControl('mt', ctx, methodName,
-          left + width/2,
+          left + width / 2,
           top);
 
         // middle-bottom
         this._drawControl('mb', ctx, methodName,
-          left + width/2,
+          left + width / 2,
           top + height);
 
         // middle-right
         this._drawControl('mr', ctx, methodName,
           left + width,
-          top + height/2);
+          top + height / 2);
 
         // middle-left
         this._drawControl('ml', ctx, methodName,
           left,
-          top + height/2);
+          top + height / 2);
       }
 
       // middle-top-rotate
@@ -384,7 +365,7 @@
       switch (this.cornerStyle) {
         case 'circle':
           ctx.beginPath();
-          ctx.arc(left + size/2, top + size/2, size/2, 0, 2 * Math.PI, false);
+          ctx.arc(left + size / 2, top + size / 2, size / 2, 0, 2 * Math.PI, false);
           ctx[methodName]();
           if (stroke) {
             ctx.stroke();

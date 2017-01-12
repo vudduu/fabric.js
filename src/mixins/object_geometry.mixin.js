@@ -48,7 +48,9 @@
             getCoords(other.oCoords)
           );
 
-      return intersection.status === 'Intersection';
+      return intersection.status === 'Intersection'
+        || other.isContainedWithinObject(this)
+        || this.isContainedWithinObject(other);
     },
 
     /**
@@ -57,11 +59,14 @@
      * @return {Boolean} true if object is fully contained within area of another object
      */
     isContainedWithinObject: function(other) {
-      var boundingRect = other.getBoundingRect(),
-          point1 = new fabric.Point(boundingRect.left, boundingRect.top),
-          point2 = new fabric.Point(boundingRect.left + boundingRect.width, boundingRect.top + boundingRect.height);
-
-      return this.isContainedWithinRect(point1, point2);
+      var points = getCoords(this.oCoords),
+          i = 0;
+      for (; i < 4; i++) {
+        if (!other.containsPoint(points[i])) {
+          return false;
+        }
+      }
+      return true;
     },
 
     /**
@@ -130,8 +135,9 @@
      * @param {fabric.Point} point Point to check
      * @param {Object} oCoords Coordinates of the object being evaluated
      */
+     // remove yi, not used but left code here just in case.
     _findCrossPoints: function(point, oCoords) {
-      var b1, b2, a1, a2, xi, yi,
+      var b1, b2, a1, a2, xi, // yi,
           xcount = 0,
           iLine;
 
@@ -148,7 +154,7 @@
         // optimisation 3: vertical line case
         if ((iLine.o.x === iLine.d.x) && (iLine.o.x >= point.x)) {
           xi = iLine.o.x;
-          yi = point.y;
+          // yi = point.y;
         }
         // calculate the intersection point
         else {
@@ -157,8 +163,8 @@
           a1 = point.y - b1 * point.x;
           a2 = iLine.o.y - b2 * iLine.o.x;
 
-          xi = - (a1 - a2) / (b1 - b2);
-          yi = a1 + b1 * xi;
+          xi = -(a1 - a2) / (b1 - b2);
+          // yi = a1 + b1 * xi;
         }
         // dont count xi < point.x cases
         if (xi >= point.x) {
@@ -192,15 +198,17 @@
 
     /**
      * Returns coordinates of object's bounding rectangle (left, top, width, height)
+     * the box is intented as aligned to axis of canvas.
+     * @param {Boolean} ignoreVpt bounding box will not be affected by viewportTransform
      * @return {Object} Object with left, top, width, height properties
      */
-    getBoundingRect: function() {
-      this.oCoords || this.setCoords();
+    getBoundingRect: function(ignoreVpt) {
+      var coords = this.calcCoords(ignoreVpt);
       return fabric.util.makeBoundingBoxFromPoints([
-        this.oCoords.tl,
-        this.oCoords.tr,
-        this.oCoords.br,
-        this.oCoords.bl
+        coords.tl,
+        coords.tr,
+        coords.br,
+        coords.bl
       ]);
     },
 
@@ -256,8 +264,7 @@
 
       this.scaleX = value;
       this.scaleY = value;
-      this.setCoords();
-      return this;
+      return this.setCoords();
     },
 
     /**
@@ -285,40 +292,36 @@
     },
 
     /**
-     * Sets corner position coordinates based on current angle, width and height
-     * See https://github.com/kangax/fabric.js/wiki/When-to-call-setCoords
-     * @return {fabric.Object} thisArg
+     * Calculate and returns the .coords of an object.
+     * @return {Object} Object with tl, tr, br, bl ....
      * @chainable
      */
-    setCoords: function() {
+    calcCoords: function(ignoreVpt) {
       var theta = degreesToRadians(this.angle),
           vpt = this.getViewportTransform(),
-          dim = this._calculateCurrentDimensions(),
-          currentWidth = dim.x, currentHeight = dim.y;
-
-      // If width is negative, make postive. Fixes path selection issue
-      if (currentWidth < 0) {
-        currentWidth = Math.abs(currentWidth);
-      }
-
-      var sinTh = Math.sin(theta),
+          dim = ignoreVpt ? this._getTransformedDimensions() : this._calculateCurrentDimensions(),
+          currentWidth = dim.x, currentHeight = dim.y,
+          sinTh = Math.sin(theta),
           cosTh = Math.cos(theta),
           _angle = currentWidth > 0 ? Math.atan(currentHeight / currentWidth) : 0,
           _hypotenuse = (currentWidth / Math.cos(_angle)) / 2,
           offsetX = Math.cos(_angle + theta) * _hypotenuse,
           offsetY = Math.sin(_angle + theta) * _hypotenuse,
-
+          center = this.getCenterPoint(),
           // offset added for rotate and scale actions
-          coords = fabric.util.transformPoint(this.getCenterPoint(), vpt),
+          coords = ignoreVpt ? center : fabric.util.transformPoint(center, vpt),
           tl  = new fabric.Point(coords.x - offsetX, coords.y - offsetY),
           tr  = new fabric.Point(tl.x + (currentWidth * cosTh), tl.y + (currentWidth * sinTh)),
           bl  = new fabric.Point(tl.x - (currentHeight * sinTh), tl.y + (currentHeight * cosTh)),
-          br  = new fabric.Point(coords.x + offsetX, coords.y + offsetY),
-          ml  = new fabric.Point((tl.x + bl.x)/2, (tl.y + bl.y)/2),
-          mt  = new fabric.Point((tr.x + tl.x)/2, (tr.y + tl.y)/2),
-          mr  = new fabric.Point((br.x + tr.x)/2, (br.y + tr.y)/2),
-          mb  = new fabric.Point((br.x + bl.x)/2, (br.y + bl.y)/2),
-          mtr = new fabric.Point(mt.x + sinTh * this.rotatingPointOffset, mt.y - cosTh * this.rotatingPointOffset);
+          br  = new fabric.Point(coords.x + offsetX, coords.y + offsetY);
+      if (!ignoreVpt) {
+        var ml  = new fabric.Point((tl.x + bl.x) / 2, (tl.y + bl.y) / 2),
+            mt  = new fabric.Point((tr.x + tl.x) / 2, (tr.y + tl.y) / 2),
+            mr  = new fabric.Point((br.x + tr.x) / 2, (br.y + tr.y) / 2),
+            mb  = new fabric.Point((br.x + bl.x) / 2, (br.y + bl.y) / 2),
+            mtr = new fabric.Point(mt.x + sinTh * this.rotatingPointOffset, mt.y - cosTh * this.rotatingPointOffset);
+      }
+
       // debugging
 
       /* setTimeout(function() {
@@ -334,21 +337,44 @@
          canvas.contextTop.fillRect(mtr.x, mtr.y, 3, 3);
        }, 50); */
 
-      this.oCoords = {
+      var coords = {
         // corners
         tl: tl, tr: tr, br: br, bl: bl,
-        // middle
-        ml: ml, mt: mt, mr: mr, mb: mb,
-        // rotating point
-        mtr: mtr
       };
+      if (!ignoreVpt) {
+        // middle
+        coords.ml = ml;
+        coords.mt = mt;
+        coords.mr = mr;
+        coords.mb = mb;
+        // rotating point
+        coords.mtr = mtr;
+      }
+      return coords;
+    },
+
+    /**
+     * Sets corner position coordinates based on current angle, width and height
+     * See https://github.com/kangax/fabric.js/wiki/When-to-call-setCoords
+     * @return {fabric.Object} thisArg
+     * @chainable
+     */
+    setCoords: function(ignoreZoom, skipAbsolute) {
+      this.oCoords = this.calcCoords(ignoreZoom);
+      if (!skipAbsolute && !ignoreZoom) {
+        this.absoluteCoords = this.calcCoords(true);
+      }
 
       // set coordinates of the draggable boxes in the corners used to scale/rotate the image
-      this._setCornerCoords && this._setCornerCoords();
+      ignoreZoom || this._setCornerCoords && this._setCornerCoords();
 
       return this;
     },
 
+    /*
+     * calculate rotation matrix of an object
+     * @return {Array} rotation matrix for the object
+     */
     _calcRotateMatrix: function() {
       if (this.angle) {
         var theta = degreesToRadians(this.angle), cos = Math.cos(theta), sin = Math.sin(theta);

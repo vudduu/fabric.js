@@ -9,6 +9,9 @@
     return;
   }
 
+  var cacheProperties = fabric.Object.prototype.cacheProperties.concat();
+  cacheProperties.push('points');
+
   /**
    * Polyline class
    * @class fabric.Polyline
@@ -45,11 +48,12 @@
      */
     minY: 0,
 
+    cacheProperties: cacheProperties,
+
     /**
      * Constructor
      * @param {Array} points Array of points (where each point is an object with x and y)
      * @param {Object} [options] Options object
-     * @param {Boolean} [skipOffset] Whether points offsetting should be skipped
      * @return {fabric.Polyline} thisArg
      * @example
      * var poly = new fabric.Polyline([
@@ -99,6 +103,7 @@
     /**
      * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
+     * @param {Boolean} noTransform
      */
     _render: function(ctx, noTransform) {
       if (!fabric.Polygon.prototype.commonRender.call(this, ctx, noTransform)) {
@@ -167,11 +172,12 @@
    * @static
    * @memberOf fabric.Polyline
    * @param {Object} object Object to create an instance from
+   * @param {Function} [callback] Callback to invoke when an fabric.Path instance is created
+   * @param {Boolean} [forceAsync] Force an async behaviour trying to create pattern first
    * @return {fabric.Polyline} Instance of fabric.Polyline
    */
-  fabric.Polyline.fromObject = function(object) {
-    var points = object.points;
-    return new fabric.Polyline(points, object, true);
+  fabric.Polyline.fromObject = function(object, callback, forceAsync) {
+    return fabric.Object._fromObject('Polyline', object, callback, forceAsync, 'points');
   };
 
 })(typeof exports !== 'undefined' ? exports : this);
