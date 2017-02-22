@@ -5789,7 +5789,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
         cornerColor: "rgba(102,153,255,0.5)",
         cornerStrokeColor: null,
         cornerStyle: "rect",
-        drawCustomControlShape: {},
+        drawCustomControlShape: null,
         cornerDashArray: null,
         centeredScaling: false,
         centeredRotation: true,
@@ -7021,8 +7021,8 @@ fabric.util.object.extend(fabric.Object.prototype, {
                 break;
 
               case "custom":
-                if (this.drawCustomControlShape[control]) {
-                    this.drawCustomControlShape[control].call(this, ctx, left, top, control);
+                if (this.drawCustomControlShape) {
+                    this.drawCustomControlShape.call(this, ctx, left, top, control);
                 }
                 break;
 
