@@ -11,12 +11,12 @@ if (typeof document !== "undefined" && typeof window !== "undefined") {
     fabric.window = window;
     window.fabric = fabric;
 } else {
-    fabric.document = require("jsdom").jsdom(decodeURIComponent("%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%3C%2Fhead%3E%3Cbody%3E%3C%2Fbody%3E%3C%2Fhtml%3E"));
-    if (fabric.document.createWindow) {
-        fabric.window = fabric.document.createWindow();
-    } else {
-        fabric.window = fabric.document.parentWindow;
-    }
+    fabric.document = require("jsdom").jsdom(decodeURIComponent("%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%3C%2Fhead%3E%3Cbody%3E%3C%2Fbody%3E%3C%2Fhtml%3E"), {
+        features: {
+            FetchExternalResources: [ "img" ]
+        }
+    });
+    fabric.window = fabric.document.defaultView;
 }
 
 fabric.isTouchSupported = "ontouchstart" in fabric.document.documentElement;
@@ -446,13 +446,10 @@ fabric.CommonMethods = {
         },
         createCanvasElement: function(canvasEl) {
             canvasEl || (canvasEl = fabric.document.createElement("canvas"));
-            if (!canvasEl.getContext && typeof G_vmlCanvasManager !== "undefined") {
-                G_vmlCanvasManager.initElement(canvasEl);
-            }
             return canvasEl;
         },
         createImage: function() {
-            return fabric.isLikelyNode ? new (require("canvas").Image)() : fabric.document.createElement("img");
+            return fabric.document.createElement("img");
         },
         createAccessors: function(klass) {
             var proto = klass.prototype, i, propName, capitalizedPropName, setterName, getterName;
@@ -711,114 +708,6 @@ fabric.CommonMethods = {
 
 (function() {
     var slice = Array.prototype.slice;
-    if (!Array.prototype.indexOf) {
-        Array.prototype.indexOf = function(searchElement) {
-            if (this === void 0 || this === null) {
-                throw new TypeError();
-            }
-            var t = Object(this), len = t.length >>> 0;
-            if (len === 0) {
-                return -1;
-            }
-            var n = 0;
-            if (arguments.length > 0) {
-                n = Number(arguments[1]);
-                if (n !== n) {
-                    n = 0;
-                } else if (n !== 0 && n !== Number.POSITIVE_INFINITY && n !== Number.NEGATIVE_INFINITY) {
-                    n = (n > 0 || -1) * Math.floor(Math.abs(n));
-                }
-            }
-            if (n >= len) {
-                return -1;
-            }
-            var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
-            for (;k < len; k++) {
-                if (k in t && t[k] === searchElement) {
-                    return k;
-                }
-            }
-            return -1;
-        };
-    }
-    if (!Array.prototype.forEach) {
-        Array.prototype.forEach = function(fn, context) {
-            for (var i = 0, len = this.length >>> 0; i < len; i++) {
-                if (i in this) {
-                    fn.call(context, this[i], i, this);
-                }
-            }
-        };
-    }
-    if (!Array.prototype.map) {
-        Array.prototype.map = function(fn, context) {
-            var result = [];
-            for (var i = 0, len = this.length >>> 0; i < len; i++) {
-                if (i in this) {
-                    result[i] = fn.call(context, this[i], i, this);
-                }
-            }
-            return result;
-        };
-    }
-    if (!Array.prototype.every) {
-        Array.prototype.every = function(fn, context) {
-            for (var i = 0, len = this.length >>> 0; i < len; i++) {
-                if (i in this && !fn.call(context, this[i], i, this)) {
-                    return false;
-                }
-            }
-            return true;
-        };
-    }
-    if (!Array.prototype.some) {
-        Array.prototype.some = function(fn, context) {
-            for (var i = 0, len = this.length >>> 0; i < len; i++) {
-                if (i in this && fn.call(context, this[i], i, this)) {
-                    return true;
-                }
-            }
-            return false;
-        };
-    }
-    if (!Array.prototype.filter) {
-        Array.prototype.filter = function(fn, context) {
-            var result = [], val;
-            for (var i = 0, len = this.length >>> 0; i < len; i++) {
-                if (i in this) {
-                    val = this[i];
-                    if (fn.call(context, val, i, this)) {
-                        result.push(val);
-                    }
-                }
-            }
-            return result;
-        };
-    }
-    if (!Array.prototype.reduce) {
-        Array.prototype.reduce = function(fn) {
-            var len = this.length >>> 0, i = 0, rv;
-            if (arguments.length > 1) {
-                rv = arguments[1];
-            } else {
-                do {
-                    if (i in this) {
-                        rv = this[i++];
-                        break;
-                    }
-                    if (++i >= len) {
-                        throw new TypeError();
-                    }
-                } while (true);
-            }
-            for (;i < len; i++) {
-                if (i in this) {
-                    rv = fn.call(null, rv, this[i], i, this);
-                }
-            }
-            return rv;
-        };
-    }
     function invoke(array, method) {
         var args = slice.call(arguments, 2), result = [];
         for (var i = 0, len = array.length; i < len; i++) {
@@ -907,11 +796,6 @@ fabric.CommonMethods = {
 })();
 
 (function() {
-    if (!String.prototype.trim) {
-        String.prototype.trim = function() {
-            return this.replace(/^[\s\xA0]+/, "").replace(/[\s\xA0]+$/, "");
-        };
-    }
     function camelize(string) {
         return string.replace(/-+(.)?/g, function(match, character) {
             return character ? character.toUpperCase() : "";
@@ -928,27 +812,6 @@ fabric.CommonMethods = {
         capitalize: capitalize,
         escapeXml: escapeXml
     };
-})();
-
-(function() {
-    var slice = Array.prototype.slice, apply = Function.prototype.apply, Dummy = function() {};
-    if (!Function.prototype.bind) {
-        Function.prototype.bind = function(thisArg) {
-            var _this = this, args = slice.call(arguments, 1), bound;
-            if (args.length) {
-                bound = function() {
-                    return apply.call(_this, this instanceof Dummy ? this : thisArg, args.concat(slice.call(arguments)));
-                };
-            } else {
-                bound = function() {
-                    return apply.call(_this, this instanceof Dummy ? this : thisArg, arguments);
-                };
-            }
-            Dummy.prototype = this.prototype;
-            bound.prototype = new Dummy();
-            return bound;
-        };
-    }
 })();
 
 (function() {
@@ -1142,9 +1005,9 @@ fabric.CommonMethods = {
         };
     }
     var pointerX = function(event) {
-        return typeof event.clientX !== unknown ? event.clientX : 0;
+        return event.clientX;
     }, pointerY = function(event) {
-        return typeof event.clientY !== unknown ? event.clientY : 0;
+        return event.clientY;
     };
     function _getPointer(event, pageProp, clientProp) {
         var touchProp = event.type === "touchend" ? "changedTouches" : "touches";
@@ -5430,9 +5293,15 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, {
                     this._beforeTransform(e, target);
                     this._setupCurrentTransform(e, target);
                 }
-                if (target !== this.getActiveGroup() && target !== this.getActiveObject()) {
+                var activeObject = this.getActiveObject();
+                if (target !== this.getActiveGroup() && target !== activeObject) {
                     this.deactivateAll();
-                    target.selectable && this.setActiveObject(target, e);
+                    if (target.selectable) {
+                        activeObject && activeObject.fire("deselected", {
+                            e: e
+                        });
+                        this.setActiveObject(target, e);
+                    }
                 }
             }
             this._handleEvent(e, "down", target ? target : null);
@@ -5920,6 +5789,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
         cornerColor: "rgba(102,153,255,0.5)",
         cornerStrokeColor: null,
         cornerStyle: "rect",
+        drawCustomControlShape: {},
         cornerDashArray: null,
         centeredScaling: false,
         centeredRotation: true,
@@ -5986,8 +5856,8 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
         _getCacheCanvasDimensions: function() {
             var zoom = this.canvas && this.canvas.getZoom() || 1, objectScale = this.getObjectScaling(), dim = this._getNonTransformedDimensions(), retina = this.canvas && this.canvas._isRetinaScaling() ? fabric.devicePixelRatio : 1, zoomX = objectScale.scaleX * zoom * retina, zoomY = objectScale.scaleY * zoom * retina, width = dim.x * zoomX, height = dim.y * zoomY;
             return {
-                width: Math.ceil(width) + 2,
-                height: Math.ceil(height) + 2,
+                width: width + 2,
+                height: height + 2,
                 zoomX: zoomX,
                 zoomY: zoomY
             };
@@ -6001,8 +5871,8 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
             }
             var dims = this._getCacheCanvasDimensions(), width = dims.width, height = dims.height, zoomX = dims.zoomX, zoomY = dims.zoomY;
             if (width !== this.cacheWidth || height !== this.cacheHeight) {
-                this._cacheCanvas.width = width;
-                this._cacheCanvas.height = height;
+                this._cacheCanvas.width = Math.ceil(width);
+                this._cacheCanvas.height = Math.ceil(height);
                 this._cacheContext.translate(width / 2, height / 2);
                 this._cacheContext.scale(zoomX, zoomY);
                 this.cacheWidth = width;
@@ -7006,9 +6876,7 @@ fabric.util.object.extend(fabric.Object.prototype, {
 })();
 
 (function() {
-    var degreesToRadians = fabric.util.degreesToRadians, isVML = function() {
-        return typeof G_vmlCanvasManager !== "undefined";
-    };
+    var degreesToRadians = fabric.util.degreesToRadians;
     fabric.util.object.extend(fabric.Object.prototype, {
         _controlsVisibility: null,
         _findTargetCorner: function(pointer) {
@@ -7152,8 +7020,14 @@ fabric.util.object.extend(fabric.Object.prototype, {
                 }
                 break;
 
+              case "custom":
+                if (this.drawCustomControlShape[control]) {
+                    this.drawCustomControlShape[control].call(this, ctx, left, top, control);
+                }
+                break;
+
               default:
-                isVML() || this.transparentCorners || ctx.clearRect(left, top, size, size);
+                this.transparentCorners || ctx.clearRect(left, top, size, size);
                 ctx[methodName + "Rect"](left, top, size, size);
                 if (stroke) {
                     ctx.strokeRect(left, top, size, size);
@@ -8427,19 +8301,7 @@ fabric.util.object.extend(fabric.Object.prototype, {
         }
     });
     fabric.Path.fromObject = function(object, callback, forceAsync) {
-        var path;
-        if (typeof object.path === "string") {
-            fabric.loadSVGFromURL(object.path, function(elements) {
-                var pathUrl = object.path;
-                path = elements[0];
-                delete object.path;
-                fabric.util.object.extend(path, object);
-                path.setSourcePath(pathUrl);
-                callback && callback(path);
-            });
-        } else {
-            return fabric.Object._fromObject("Path", object, callback, forceAsync, "path");
-        }
+        return fabric.Object._fromObject("Path", object, callback, forceAsync, "path");
     };
     fabric.Path.ATTRIBUTE_NAMES = fabric.SHARED_ATTRIBUTES.concat([ "d" ]);
     fabric.Path.fromElement = function(element, callback, options) {
@@ -8601,7 +8463,7 @@ fabric.util.object.extend(fabric.Object.prototype, {
     fabric.PathGroup.fromObject = function(object, callback) {
         var originalPaths = object.paths;
         delete object.paths;
-        if (typeof orignalPaths === "string") {
+        if (typeof originalPaths === "string") {
             fabric.loadSVGFromURL(originalPaths, function(elements) {
                 var pathUrl = originalPaths;
                 var pathGroup = fabric.util.groupSVGElements(elements, object, pathUrl);
@@ -9111,20 +8973,13 @@ fabric.util.object.extend(fabric.Object.prototype, {
             });
             replacement.width = canvasEl.width;
             replacement.height = canvasEl.height;
-            if (fabric.isLikelyNode) {
-                replacement.src = canvasEl.toBuffer(undefined, fabric.Image.pngCompression);
+            replacement.onload = function() {
                 _this._element = replacement;
                 !forResizing && (_this._filteredEl = replacement);
                 callback && callback(_this);
-            } else {
-                replacement.onload = function() {
-                    _this._element = replacement;
-                    !forResizing && (_this._filteredEl = replacement);
-                    callback && callback(_this);
-                    replacement.onload = canvasEl = null;
-                };
-                replacement.src = canvasEl.toDataURL("image/png");
-            }
+                replacement.onload = canvasEl = null;
+            };
+            replacement.src = canvasEl.toDataURL("image/png");
             return canvasEl;
         },
         _render: function(ctx, noTransform) {
@@ -10182,9 +10037,9 @@ fabric.Image.filters.BaseFilter.fromObject = function(object, callback) {
         },
         _getCacheCanvasDimensions: function() {
             var dim = this.callSuper("_getCacheCanvasDimensions");
-            var fontSize = Math.ceil(this.fontSize) * 2;
-            dim.width += fontSize;
-            dim.height += fontSize;
+            var fontSize = this.fontSize * 2;
+            dim.width += fontSize * dim.zoomX;
+            dim.height += fontSize * dim.zoomY;
             return dim;
         },
         _render: function(ctx) {
@@ -12698,7 +12553,6 @@ fabric.util.object.extend(fabric.IText.prototype, {
     fabric.createCanvasForNode = function(width, height, options, nodeCanvasOptions) {
         nodeCanvasOptions = nodeCanvasOptions || options;
         var canvasEl = fabric.document.createElement("canvas"), nodeCanvas = new Canvas(width || 600, height || 600, nodeCanvasOptions), nodeCacheCanvas = new Canvas(width || 600, height || 600, nodeCanvasOptions);
-        canvasEl.style = {};
         canvasEl.width = nodeCanvas.width;
         canvasEl.height = nodeCanvas.height;
         options = options || {};
