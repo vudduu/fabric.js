@@ -6344,8 +6344,12 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
         object = clone(object, true);
         if (forceAsync) {
             fabric.util.enlivenPatterns([ object.fill, object.stroke ], function(patterns) {
-                object.fill = patterns[0];
-                object.stroke = patterns[1];
+                if (typeof patterns[0] !== "undefined") {
+                    object.fill = patterns[0];
+                }
+                if (typeof patterns[1] !== "undefined") {
+                    object.stroke = patterns[1];
+                }
                 var instance = extraParam ? new klass(object[extraParam], object) : new klass(object);
                 callback && callback(instance);
             });
@@ -6675,7 +6679,10 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
             return multiplyMatrices(m, skewMatrixY, true);
         },
         _getNonTransformedDimensions: function() {
-            var strokeWidth = this.strokeWidth, w = this.width + strokeWidth, h = this.height + strokeWidth;
+            var strokeWidth = this.strokeWidth, w = this.width, h = this.height + strokeWidth;
+            if (this.type !== "line") {
+                w = w + strokeWidth;
+            }
             return {
                 x: w,
                 y: h
@@ -7305,6 +7312,13 @@ fabric.util.object.extend(fabric.Object.prototype, {
         },
         calcLinePoints: function() {
             var xMult = this.x1 <= this.x2 ? -1 : 1, yMult = this.y1 <= this.y2 ? -1 : 1, x1 = xMult * this.width * .5, y1 = yMult * this.height * .5, x2 = xMult * this.width * -.5, y2 = yMult * this.height * -.5;
+            if (this.strokeLineCap === "round") {
+                x1 = xMult * (this.width - this.strokeWidth) * .5;
+                x2 = xMult * (this.width - this.strokeWidth) * -.5;
+            } else {
+                x1 = xMult * this.width * .5;
+                x2 = xMult * this.width * -.5;
+            }
             return {
                 x1: x1,
                 x2: x2,
