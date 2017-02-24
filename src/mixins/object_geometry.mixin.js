@@ -482,11 +482,8 @@
      */
     _getNonTransformedDimensions: function() {
       var strokeWidth = this.strokeWidth,
-          w = this.width,
+          w = this.width + strokeWidth,
           h = this.height + strokeWidth;
-      if (this.type !== 'line') {
-        w = w + strokeWidth;
-      }
       return { x: w, y: h };
     },
 

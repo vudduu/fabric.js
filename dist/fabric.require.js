@@ -6679,10 +6679,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
             return multiplyMatrices(m, skewMatrixY, true);
         },
         _getNonTransformedDimensions: function() {
-            var strokeWidth = this.strokeWidth, w = this.width, h = this.height + strokeWidth;
-            if (this.type !== "line") {
-                w = w + strokeWidth;
-            }
+            var strokeWidth = this.strokeWidth, w = this.width + strokeWidth, h = this.height + strokeWidth;
             return {
                 x: w,
                 y: h
@@ -7304,10 +7301,8 @@ fabric.util.object.extend(fabric.Object.prototype, {
                 if (dim.x === 0) {
                     dim.y -= this.strokeWidth;
                 }
-                if (dim.y === 0) {
-                    dim.x -= this.strokeWidth;
-                }
             }
+            dim.x = this.width;
             return dim;
         },
         calcLinePoints: function() {
@@ -7315,9 +7310,6 @@ fabric.util.object.extend(fabric.Object.prototype, {
             if (this.strokeLineCap === "round") {
                 x1 = xMult * (this.width - this.strokeWidth) * .5;
                 x2 = xMult * (this.width - this.strokeWidth) * -.5;
-            } else {
-                x1 = xMult * this.width * .5;
-                x2 = xMult * this.width * -.5;
             }
             return {
                 x1: x1,

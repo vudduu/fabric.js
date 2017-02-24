@@ -13927,11 +13927,8 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
      */
     _getNonTransformedDimensions: function() {
       var strokeWidth = this.strokeWidth,
-          w = this.width,
+          w = this.width + strokeWidth,
           h = this.height + strokeWidth;
-      if (this.type !== 'line') {
-        w = w + strokeWidth;
-      }
       return { x: w, y: h };
     },
 
@@ -15174,10 +15171,8 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
         if (dim.x === 0) {
           dim.y -= this.strokeWidth;
         }
-        if (dim.y === 0) {
-          dim.x -= this.strokeWidth;
-        }
       }
+      dim.x = this.width;
       return dim;
     },
 
@@ -15195,10 +15190,6 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
       if (this.strokeLineCap === 'round') {
         x1 = xMult * (this.width - this.strokeWidth) * 0.5;
         x2 = xMult * (this.width - this.strokeWidth) * -0.5;
-      }
-      else {
-        x1 = xMult * this.width * 0.5;
-        x2 = xMult * this.width * -0.5;
       }
       return {
         x1: x1,
