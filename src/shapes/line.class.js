@@ -225,10 +225,8 @@
         if (dim.x === 0) {
           dim.y -= this.strokeWidth;
         }
-        if (dim.y === 0) {
-          dim.x -= this.strokeWidth;
-        }
       }
+      dim.x = this.width;
       return dim;
     },
 
@@ -243,14 +241,9 @@
           y1 = (yMult * this.height * 0.5),
           x2 = (xMult * this.width * -0.5),
           y2 = (yMult * this.height * -0.5);
-
       if (this.strokeLineCap === 'round') {
         x1 = xMult * (this.width - this.strokeWidth) * 0.5;
         x2 = xMult * (this.width - this.strokeWidth) * -0.5;
-      }
-      else {
-        x1 = xMult * this.width * 0.5;
-        x2 = xMult * this.width * -0.5;
       }
       return {
         x1: x1,
