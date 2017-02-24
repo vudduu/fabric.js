@@ -11783,11 +11783,39 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
     cornerStrokeColor:        null,
 
     /**
-     * Specify style of control, 'rect' or 'circle'
+     * Specify style of control, 'rect', 'circle' or 'custom'
      * @since 1.6.2
      * @type String
      */
     cornerStyle:          'rect',
+
+    /**
+     * Specify a function to draw custom shapes on scale-controls and rotation-control.
+     * @since 1.7.6
+     * @type Function
+     * @example <caption>Draw a triangle on all the controls</caption>
+     * var object = new fabric.Rect({
+     *   top: 100,
+     *   left: 100,
+     *   width: 150,
+     *   height: 150,
+     *   fill: '#a9477F',
+     *   cornerStyle: 'custom'
+     * });
+     * canvas.add(object);
+     * function drawTriangle (ctx, left, top, control) {
+     *   ctx.strokeStyle = ctx.fillStyle = this.borderColor;
+     *   ctx.beginPath();
+     *   ctx.moveTo(left, top - 10);
+     *   ctx.lineTo(left + 15, top + 5);
+     *   ctx.lineTo(left, top + 20);
+     *   ctx.fill();
+     * }
+     * object.set({
+     *   drawCustomControlShape: drawTriangle
+     * });
+     */
+    drawCustomControlShape:   null,
 
     /**
      * Array specifying dash pattern of an object's control (hasBorder must be true)
@@ -14607,6 +14635,11 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
             ctx.stroke();
           }
           break;
+        case 'custom':
+          if (this.drawCustomControlShape) {
+            this.drawCustomControlShape.call(this, ctx, left, top, control);
+          }
+          break;
         default:
           this.transparentCorners || ctx.clearRect(left, top, size, size);
           ctx[methodName + 'Rect'](left, top, size, size);
@@ -15141,8 +15174,10 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
         if (dim.x === 0) {
           dim.y -= this.strokeWidth;
         }
+        if (dim.y === 0) {
+          dim.x -= this.strokeWidth;
+        }
       }
-      dim.x = this.width;
       return dim;
     },
 
@@ -15160,6 +15195,10 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
       if (this.strokeLineCap === 'round') {
         x1 = xMult * (this.width - this.strokeWidth) * 0.5;
         x2 = xMult * (this.width - this.strokeWidth) * -0.5;
+      }
+      else {
+        x1 = xMult * this.width * 0.5;
+        x2 = xMult * this.width * -0.5;
       }
       return {
         x1: x1,

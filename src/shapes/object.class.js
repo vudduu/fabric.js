@@ -468,25 +468,39 @@
     cornerStrokeColor:        null,
 
     /**
-     * Specify style of control, 'rect' or 'circle'
+     * Specify style of control, 'rect', 'circle' or 'custom'
      * @since 1.6.2
      * @type String
      */
     cornerStyle:          'rect',
 
     /**
-     * Draw custom control shapes, control in the corners and rotation-control.
-     * @since 1.6.4
-     * @type Object
-     * @example <caption>custom control shapes on all the corners</caption>
-     * drawCustomControlShape: {
-     *   bl: function(ctx: Object, left: number, top: number){},
-     *   br: function(ctx: Object, left: number, top: number){},
-     *   tl: function(ctx: Object, left: number, top: number){},
-     *   tr: function(ctx: Object, left: number, top: number){},
+     * Specify a function to draw custom shapes on scale-controls and rotation-control.
+     * @since 1.7.6
+     * @type Function
+     * @example <caption>Draw a triangle on all the controls</caption>
+     * var object = new fabric.Rect({
+     *   top: 100,
+     *   left: 100,
+     *   width: 150,
+     *   height: 150,
+     *   fill: '#a9477F',
+     *   cornerStyle: 'custom'
+     * });
+     * canvas.add(object);
+     * function drawTriangle (ctx, left, top, control) {
+     *   ctx.strokeStyle = ctx.fillStyle = this.borderColor;
+     *   ctx.beginPath();
+     *   ctx.moveTo(left, top - 10);
+     *   ctx.lineTo(left + 15, top + 5);
+     *   ctx.lineTo(left, top + 20);
+     *   ctx.fill();
      * }
+     * object.set({
+     *   drawCustomControlShape: drawTriangle
+     * });
      */
-    drawCustomControlShape:   {},
+    drawCustomControlShape:   null,
 
     /**
      * Array specifying dash pattern of an object's control (hasBorder must be true)
