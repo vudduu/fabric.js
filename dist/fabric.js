@@ -15113,10 +15113,11 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
         //  Line coords are distances from left-top of canvas to origin of line.
         //  To render line in a path-group, we need to translate them to
         //  distances from center of path-group to center of line.
-        var cp = this.getCenterPoint();
+        var cp = this.getCenterPoint(),
+            offset = this.strokeWidth / 2;
         ctx.translate(
-          cp.x - this.strokeWidth / 2,
-          cp.y - this.strokeWidth / 2
+          cp.x - (this.strokeLineCap === 'butt' && this.height === 0 ? 0 : offset),
+          cp.y - (this.strokeLineCap === 'butt' && this.width === 0 ? 0 : offset)
         );
       }
 
@@ -15168,11 +15169,13 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
     _getNonTransformedDimensions: function() {
       var dim = this.callSuper('_getNonTransformedDimensions');
       if (this.strokeLineCap === 'butt') {
-        if (dim.x === 0) {
+        if (this.width === 0) {
           dim.y -= this.strokeWidth;
         }
+        if (this.height === 0) {
+          dim.x -= this.strokeWidth;
+        }
       }
-      dim.x = this.width;
       return dim;
     },
 
@@ -15187,10 +15190,10 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
           y1 = (yMult * this.height * 0.5),
           x2 = (xMult * this.width * -0.5),
           y2 = (yMult * this.height * -0.5);
-      if (this.strokeLineCap === 'round') {
-        x1 = xMult * (this.width - this.strokeWidth) * 0.5;
-        x2 = xMult * (this.width - this.strokeWidth) * -0.5;
-      }
+      // if (this.strokeLineCap === 'round') {
+      //   x1 = xMult * (this.width - this.strokeWidth) * 0.5;
+      //   x2 = xMult * (this.width - this.strokeWidth) * -0.5;
+      // }
       return {
         x1: x1,
         x2: x2,

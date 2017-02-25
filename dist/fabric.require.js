@@ -7272,8 +7272,8 @@ fabric.util.object.extend(fabric.Object.prototype, {
         _render: function(ctx, noTransform) {
             ctx.beginPath();
             if (noTransform) {
-                var cp = this.getCenterPoint();
-                ctx.translate(cp.x - this.strokeWidth / 2, cp.y - this.strokeWidth / 2);
+                var cp = this.getCenterPoint(), offset = this.strokeWidth / 2;
+                ctx.translate(cp.x - (this.strokeLineCap === "butt" && this.height === 0 ? 0 : offset), cp.y - (this.strokeLineCap === "butt" && this.width === 0 ? 0 : offset));
             }
             if (!this.strokeDashArray || this.strokeDashArray && supportsLineDash) {
                 var p = this.calcLinePoints();
@@ -7298,19 +7298,17 @@ fabric.util.object.extend(fabric.Object.prototype, {
         _getNonTransformedDimensions: function() {
             var dim = this.callSuper("_getNonTransformedDimensions");
             if (this.strokeLineCap === "butt") {
-                if (dim.x === 0) {
+                if (this.width === 0) {
                     dim.y -= this.strokeWidth;
                 }
+                if (this.height === 0) {
+                    dim.x -= this.strokeWidth;
+                }
             }
-            dim.x = this.width;
             return dim;
         },
         calcLinePoints: function() {
             var xMult = this.x1 <= this.x2 ? -1 : 1, yMult = this.y1 <= this.y2 ? -1 : 1, x1 = xMult * this.width * .5, y1 = yMult * this.height * .5, x2 = xMult * this.width * -.5, y2 = yMult * this.height * -.5;
-            if (this.strokeLineCap === "round") {
-                x1 = xMult * (this.width - this.strokeWidth) * .5;
-                x2 = xMult * (this.width - this.strokeWidth) * -.5;
-            }
             return {
                 x1: x1,
                 x2: x2,
